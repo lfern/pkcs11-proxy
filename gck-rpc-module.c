@@ -71,6 +71,10 @@ static char pkcs11_socket_path[MAXPATHLEN] = { 0, };
 /* The TLS-PSK keyfile name */
 static char tls_psk_key_filename[MAXPATHLEN] = { 0, };
 
+#ifdef  __MINGW32__
+int initwsocket = 0;
+#endif
+
 /* The error used by us when parsing of rpc message fails */
 #define PARSE_ERROR   CKR_DEVICE_ERROR
 
@@ -420,6 +424,21 @@ static CK_RV call_connect(CallState * cs)
 	debug(("connecting to: %s", pkcs11_socket_path));
 
 	memset(&addr, 0, sizeof(addr));
+
+
+#ifdef  __MINGW32__
+	if (!initwsocket) {
+		WSADATA wsaData;
+		int iResult;
+
+		iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+		if (iResult != 0) {
+			gck_rpc_warn("WSAStartup failed: %d\n", iResult);
+			return CKR_DEVICE_ERROR;
+		}
+		initwsocket = 1;
+	}
+#endif
 
 	if (! strncmp("tcp://", pkcs11_socket_path, 6) ||
 	    ! strncmp("tls://", pkcs11_socket_path, 6)) {
