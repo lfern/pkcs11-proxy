@@ -42,6 +42,7 @@
 
 #ifdef __MINGW32__
 # include <winsock2.h>
+# include <ws2tcpip.h>
 #endif
 
 #define SOCKET_PATH "tcp://127.0.0.1"

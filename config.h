@@ -17,6 +17,11 @@
 # include <stdlib.h>
 # include <limits.h>
 # include <winsock2.h>
+# include <ws2tcpip.h>
+
+#if !defined(O_CLOEXEC)
+#define O_CLOEXEC O_NOINHERIT
+#endif
 
 typedef uint32_t __uid32_t;
 typedef uint32_t __gid32_t;
