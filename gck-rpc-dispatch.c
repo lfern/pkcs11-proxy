@@ -27,6 +27,8 @@
 #include "gck-rpc-private.h"
 #include "gck-rpc-tls-psk.h"
 
+#include "debug-utils.h"
+
 #include "pkcs11/pkcs11.h"
 #include "pkcs11/pkcs11g.h"
 #include "pkcs11/pkcs11i.h"
@@ -2288,6 +2290,7 @@ static void run_dispatch_loop(CallState *cs)
 
 		egg_buffer_add_empty(&cs->req->buffer, len);
 
+		// debug_print_mesg("input>", buf, 4, cs->req->buffer.buf, cs->req->buffer.len);
 		if (!gck_rpc_message_parse(cs->req, GCK_RPC_REQUEST))
 			break;
 
@@ -2297,6 +2300,7 @@ static void run_dispatch_loop(CallState *cs)
 
 		/* .. send back response length, and then response data */
 		egg_buffer_encode_uint32(buf, cs->resp->buffer.len);
+		// debug_print_mesg("output>", buf, 4, cs->resp->buffer.buf, cs->resp->buffer.len);
 		if (!cs->write(cs, buf, 4) ||
 		    !cs->write(cs, cs->resp->buffer.buf, cs->resp->buffer.len))
 			break;
