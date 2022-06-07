@@ -241,8 +241,15 @@ gck_rpc_message_write_attribute_buffer(GckRpcMessage * msg,
 		egg_buffer_add_uint32(&msg->buffer, attr->type);
 
 		/* And the attribute buffer length */
-		egg_buffer_add_uint32(&msg->buffer,
-				      attr->pValue ? attr->ulValueLen : 0);
+		// LFERN egg_buffer_add_uint32(&msg->buffer,
+		//		      attr->pValue ? attr->ulValueLen : 0);
+		if (gck_rpc_has_ulong_parameter(attr->type)) {
+			egg_buffer_add_uint32(&msg->buffer,
+				 attr->pValue ? sizeof(uint64_t) : 0);
+		} else {
+			egg_buffer_add_uint32(&msg->buffer,
+			    attr->pValue ? attr->ulValueLen : 0);
+		}					  
 	}
 
 	return !egg_buffer_has_error(&msg->buffer);
@@ -277,14 +284,16 @@ gck_rpc_message_write_attribute_array(GckRpcMessage * msg,
 
 		/* The attribute length and value */
 		if (validity) {
-			egg_buffer_add_uint32(&msg->buffer, attr->ulValueLen);
+			// LFERN remove this egg_buffer_add_uint32(&msg->buffer, attr->ulValueLen);
 			if (gck_rpc_has_bad_sized_ulong_parameter(attr)) {
 				uint64_t val = *(CK_ULONG *)attr->pValue;
-
+				egg_buffer_add_uint32(&msg->buffer, sizeof(val));
 				egg_buffer_add_byte_array (&msg->buffer, (unsigned char *)&val, sizeof (val));
-			} else
+			} else {
+				egg_buffer_add_uint32(&msg->buffer, attr->ulValueLen);
 				egg_buffer_add_byte_array(&msg->buffer, attr->pValue,
 							  attr->ulValueLen);
+			}
 		}
 	}
 

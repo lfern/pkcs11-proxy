@@ -854,12 +854,23 @@ proto_read_attribute_array(GckRpcMessage * msg, CK_ATTRIBUTE_PTR arr,
 					return PARSE_ERROR;
 				}
 				attrlen = value;
+				// LFERN fix attribute len
+				CK_ULONG a;
+				/* Attribute len is an integer, but
+					* does not match CK_ULONG size, it's certainly
+					* a CK_ULONG from a different platform */
+				if (attrlen == sizeof(uint64_t) &&
+					sizeof(CK_ULONG) != sizeof(uint64_t) &&
+					gck_rpc_has_ulong_parameter(attr->type)) {
+					attrlen = sizeof(CK_ULONG);
+					a = *(uint64_t *) attrval;
+					attrval = (unsigned char *)&a;
+				}
 			} else {
 				warning(("failed reading byte array"));
 				return PARSE_ERROR;
 			}
 		}
-
 		/* Don't act on this data unless no errors */
 		if (egg_buffer_has_error(&msg->buffer))
 			break;
@@ -881,25 +892,24 @@ proto_read_attribute_array(GckRpcMessage * msg, CK_ATTRIBUTE_PTR arr,
 				} else if (attr->ulValueLen < attrlen) {
 					attr->ulValueLen = attrlen;
 					ret = CKR_BUFFER_TOO_SMALL;
-
 					/* Wants attribute data, value is null */
 				} else if (attrval == NULL) {
 					attr->ulValueLen = 0;
 
 					/* Wants attribute data, enough space */
 				} else {
-					CK_ULONG a;
-
-					/* Attribute len is an integer, but
-					 * does not match CK_ULONG size, it's certainly
-					 * a CK_ULONG from a different platform */
-					if (attrlen == sizeof(uint64_t) &&
-					    sizeof(CK_ULONG) != sizeof(uint64_t) &&
-					    gck_rpc_has_ulong_parameter(attr->type)) {
-						attrlen = sizeof(CK_ULONG);
-						a = *(uint64_t *) attrval;
-						attrval = (unsigned char *)&a;
-					}
+					// LFERN this must be done above to fix the attribute len
+					// CK_ULONG a;
+					///* Attribute len is an integer, but
+					// * does not match CK_ULONG size, it's certainly
+					// * a CK_ULONG from a different platform */
+					//if (attrlen == sizeof(uint64_t) &&
+					//    sizeof(CK_ULONG) != sizeof(uint64_t) &&
+					//    gck_rpc_has_ulong_parameter(attr->type)) {
+					//	attrlen = sizeof(CK_ULONG);
+					//	a = *(uint64_t *) attrval;
+					//	attrval = (unsigned char *)&a;
+					//}
 					attr->ulValueLen = attrlen;
 					memcpy(attr->pValue, attrval, attrlen);
 				}
